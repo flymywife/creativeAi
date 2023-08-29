@@ -60,8 +60,8 @@ def handle_message(event):
         '嫌いな食べ物を最初に教えてください。複数ある場合はいっぺんに伝えて。ローラママはあなたの嫌いな食べ物を覚えてくれます。\n'
         '「献立考えて」というと献立を考えてくれます。\n'
         'ローラママが提案した献立を採用する場合「採用」と言いましょう。\n'
-        '採用したレシピはローラママが覚えていてくれます。👍\n'
-        '採用したレシピはあとで呼び出すことが出来ます。日付指定も出来るので試してみてください。\n'
+        '採用した献立はローラママが覚えていてくれます。👍\n'
+        '採用した献立はあとで呼び出すことが出来ます。日付指定も出来るので試してみてください。\n'
         '利用制限回数は12回です。毎日0時に回数がリセットされます。'
         '説明書以外の発言は利用回数がカウントされます。'
         )
@@ -92,7 +92,7 @@ def handle_message(event):
     limit = lambda_dao.increment_limit(user_id)
     if limit is None:
         return line_bot_api.reply_message(event.reply_token, TextSendMessage(text='おや？ユーザー情報が見つからないよ？もう一度試してみてね。'))  
-    elif limit >= 99:
+    elif limit >= 12:
          limit_message = (
         '利用制限に達したよ！'
         '毎日0時に制限がリセットされるよ！'
@@ -130,9 +130,9 @@ def handle_message(event):
              f'現在日時は{now}です。現在日時が必要な時に利用してください。'
              f'ユーザーの名前は{user_name}です。' 
              f'ユーザーの嫌いな食べ物は{hate_food}' 
-             'ユーザーから「献立考えて」と言われたら必ず何かレシピを提案してください' 
-             'レシピは一度にいくつも提案しないでください。１つに絞ってください。'
-             'ユーザーの嫌いな食べ物はレシピに入れないでください '
+             'ユーザーから「献立考えて」と言われたら必ず何か献立を提案してください' 
+             '献立は一度にいくつも提案しないでください。１つに絞ってください。'
+             'ユーザーの嫌いな食べ物は献立に入れないでください '
             },
             {'role': 'user', 'content': f'{past_message1}'},
             {'role': 'assistant', 'content': f'{past_reply1}'},
@@ -149,13 +149,13 @@ def handle_message(event):
     functions=[
             {
                 "name": "update_user_name",
-                "description": """ユーザーが自分の名前を名乗ったら名前を覚えておく""",
+                "description": """ユーザー名の保存""",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "user_name": {
                             "type": "string",
-                            "description": "ユーザーの名前。"
+                            "description": "ユーザーの名前。例：僕の名前はしょうですと言われたら「しょう」がユーザーの名前。"
                         },
                     }
                 },
@@ -163,13 +163,13 @@ def handle_message(event):
             },
             {
                 "name": "update_hate_food",
-                "description": """ユーザーの嫌いな食べ物・苦手な食べ物を覚えておく""",
+                "description": """ユーザーの嫌いな食べ物・苦手な食べ物を保存""",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "hate_food": {
                             "type": "string",
-                            "description": "ユーザーの嫌いな食べ物・苦手な食べ物"
+                            "description": "ユーザーの嫌いな食べ物・苦手な食べ物。複数ある場合は、区切りで保存する"
                         },
                     }
                 },
@@ -177,40 +177,36 @@ def handle_message(event):
             },
             {
                 "name": "update_recipi",
-                "description": """自分の提案したレシピが「採用」と言われたら採用されたレシピを覚えておく
-                （料理名を記載、もしメインディッシュサイドディッシュデザートなどがある場合全て覚えておく）""",
+                "description": """自分の提案した献立が「採用」と言われたら採用された献立を保存
+                （料理名を記載、もしメインディッシュサイドディッシュデザートなどがある場合全て保存）""",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "recipi": {
                             "type": "string",
-                            "description": "提案したレシピ"
+                            "description": "ユーザーに提案した献立"
                         },
                     }
                 },
                 "required": ["recipi"]
             },
             {
-                "name": "get_past_nine_recipi",
-                "description": "今までの提案したレシピを参照する必要があるときに過去のレシピを参照する",
+                "name": "get_past_recipi",
+                "description": "今までの提案した献立を参照する必要があるときに過去の献立を参照する",
                 "parameters": {
                     "type": "object",
                     "properties":{
-                        "past_recipi": {
-                            "type": "string",
-                            "description": "過去のレシピ"
-                        },
                         "start_date": {
                             "type": "string",
-                            "description": "参照する過去レシピの範囲の開始日付。指定する形式はyyyy-mm-ddT00:00:00.000000+09:00。指定がない場合現在日時からみて3日前で良い。"
+                            "description": "参照する過去献立の範囲の開始日付。指定する形式はyyyy-mm-ddT00:00:00.000000+09:00。指定がない場合現在日時からみて3日前で良い。"
                         },
                         "end_date": {
                             "type": "string",
-                            "description": "参照する過去レシピの範囲の終了日付。指定する形式はyyyy-mm-ddT23:59:59.999999+09:00。指定がない場合現在日時からみて昨日で良い。"
+                            "description": "参照する過去献立の範囲の終了日付。指定する形式はyyyy-mm-ddT23:59:59.999999+09:00。指定がない場合現在日時からみて昨日で良い。"
                         },
                     }
                 }, 
-                "required": ["past_recipi", "start_date", "end_date"],
+                "required": ["start_date", "end_date"],
             }
         ]
 
@@ -221,7 +217,7 @@ def handle_message(event):
     message = answer_response["choices"][0]["message"]
     
     # 受け取った回答のJSONを目視確認できるようにINFOでログに吐く
-    logger.info(answer)
+    logger.info(answer_response)
     
     # STEP2: モデルが関数を呼び出したいかどうかを確認
     if message.get("function_call"):
@@ -259,6 +255,7 @@ def handle_message(event):
                 )
                 second_response = call_secound_gpt(messages)
                 answer = second_response["choices"][0]["message"]["content"]
+                logger.info(second_response)
         elif function_name == "update_recipi":
                 recipi = arguments["recipi"]
                 argsment = {
@@ -276,16 +273,13 @@ def handle_message(event):
                 )
                 second_response = call_secound_gpt(messages)
                 answer = second_response["choices"][0]["message"]["content"]
-        elif function_name == "get_past_nine_recipi":
+        elif function_name == "get_past_recipi":
                 start_date = arguments["start_date"]
                 end_date = arguments["end_date"]
                 recipi_data = lambda_dao.get_recipi_data(user_id, start_date, end_date)
                 recipi_data_pairs = [(item['date'], item['recipi']) for item in recipi_data['Items']]
                 recipi_data_strings = [str(pair) for pair in recipi_data_pairs]
                 message_string = "\n".join(map(str, recipi_data_strings))
-                print(start_date)
-                print(end_date)
-                print(message_string)
                 messages.append(
                     {
                         "role": "function",
