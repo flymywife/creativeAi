@@ -155,7 +155,7 @@ def handle_message(event):
                     "properties": {
                         "user_name": {
                             "type": "string",
-                            "description": "ユーザーの名前。例：僕の名前はしょうですと言われたら「しょう」がユーザーの名前。"
+                            "description": "ユーザーの名前。自己紹介されたら名前を保存する。"
                         },
                     }
                 },
